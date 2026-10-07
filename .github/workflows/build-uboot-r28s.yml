@@ -10,11 +10,11 @@ on:
       ddr_ver:
         description: 'rkbin DDR blob 文件名'
         required: true
-        default: 'rk3528_ddr_1056MHz_v1.10.bin'
+        default: 'rk3528_ddr_1056MHz_v1.14.bin'
       bl31_ver:
         description: 'rkbin BL31 elf 文件名'
         required: true
-        default: 'rk3528_bl31_v1.18.elf'
+        default: 'rk3528_bl31_v1.21.elf'
 
 env:
   BOARD: nanopi-r28s-rk3528
