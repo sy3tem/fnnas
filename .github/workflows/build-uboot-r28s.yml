@@ -12,9 +12,9 @@ on:
         required: true
         default: 'rk3528_ddr_1056MHz_v1.14.bin'
       bl31_ver:
-        description: 'rkbin BL31 elf 文件名'
+        description: 'BL31 来源: repo=用仓库固定的 v1.18 / 否则填 rkbin 文件名'
         required: true
-        default: 'rk3528_bl31_v1.21.elf'
+        default: 'repo'
 
 env:
   BOARD: nanopi-r28s-rk3528
@@ -48,10 +48,12 @@ jobs:
             https://github.com/u-boot/u-boot.git u-boot
           cd u-boot && git log --oneline -1
 
-      - name: Clone rockchip rkbin (DDR blob + BL31)
+      - name: Clone rockchip rkbin (DDR blob only)
         run: |
           git clone --depth 1 https://github.com/rockchip-linux/rkbin.git rkbin
-          ls -la rkbin/bin/rk35/ | grep -E 'rk3528_(ddr|bl31)' || true
+          ls -la rkbin/bin/rk35/ | grep -E 'rk3528_ddr' || true
+          echo "--- BL31 用仓库固定版本(不从 rkbin 拉最新,避免 v1.21 兼容性问题) ---"
+          ls -la r28s-src/uboot-r28s/rk3528_bl31_v1.18.elf
 
       - name: Inject R28S dts & defconfig into u-boot tree
         run: |
@@ -87,10 +89,17 @@ jobs:
       - name: Build U-Boot
         run: |
           cd u-boot
-          export BL31=../rkbin/bin/rk35/${{ inputs.bl31_ver }}
-          export ROCKCHIP_TPL=../rkbin/bin/rk35/${{ inputs.ddr_ver }}
+          # BL31: 默认用仓库固定的 v1.18(与 ROCK2A/Sige1 成功启动同源, fwver v2.3-857-g059b3c586:derrick.huang)
+          if [ "${{ inputs.bl31_ver }}" = "repo" ]; then
+            export BL31="$GITHUB_WORKSPACE/r28s-src/uboot-r28s/rk3528_bl31_v1.18.elf"
+          else
+            export BL31="$GITHUB_WORKSPACE/rkbin/bin/rk35/${{ inputs.bl31_ver }}"
+          fi
+          export ROCKCHIP_TPL="$GITHUB_WORKSPACE/rkbin/bin/rk35/${{ inputs.ddr_ver }}"
           echo "BL31=$BL31"; ls -la "$BL31"
           echo "TPL=$ROCKCHIP_TPL"; ls -la "$ROCKCHIP_TPL"
+          echo "--- BL31 fwver ---"
+          strings "$BL31" | grep -i "fwver" | head -1 || true
           make ${BOARD}_defconfig
           make -j"$(nproc)" CROSS_COMPILE=aarch64-linux-gnu-
 
