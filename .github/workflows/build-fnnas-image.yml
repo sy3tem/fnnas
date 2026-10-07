@@ -109,6 +109,7 @@ on:
           - nanopc-t4
           - nanopc-t6
           - nanopi-m5
+          - nanopi-r28s
           - nanopi-r5c
           - nanopi-r5s
           - nanopi-som
@@ -267,9 +268,10 @@ on:
       kernel_repo:
         description: "Set fnnas kernel repository"
         required: false
-        default: "ophub/fnnas"
+        default: "sy3tem/fnnas"
         type: choice
         options:
+          - sy3tem/fnnas
           - ophub/fnnas
       fnnas_kernel:
         description: "Select fnnas kernel version"
