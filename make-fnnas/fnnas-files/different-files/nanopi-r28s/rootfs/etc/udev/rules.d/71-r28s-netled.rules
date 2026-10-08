@@ -1,12 +1,8 @@
-# NanoPi R28S - WAN/LAN port LED (gpio4 PB1 / PB3) netdev trigger binding.
+# SUPERSEDED -- do not use.
 #
-# The DTB declares both port LEDs with linux,default-trigger = "netdev", but
-# a netdev trigger stays inactive until an interface name is written to its
-# device_name attribute. Nothing in fnOS does that, so the LEDs never light.
-# Bind them as soon as the interface is registered (and again whenever the
-# driver is re-probed), and also when the LED class device itself shows up
-# (covers the case where udev runs before the net devices exist).
-ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth0", RUN+="/bin/sh /usr/local/sbin/r28s-netled.sh"
-ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth1", RUN+="/bin/sh /usr/local/sbin/r28s-netled.sh"
-ACTION=="add", SUBSYSTEM=="leds", KERNEL=="wan", RUN+="/bin/sh /usr/local/sbin/r28s-netled.sh"
-ACTION=="add", SUBSYSTEM=="leds", KERNEL=="lan", RUN+="/bin/sh /usr/local/sbin/r28s-netled.sh"
+# The old 71-r28s-netled.rules matched KERNEL=="wan"/"lan", the LED class names
+# that only existed while the DTB carried label="wan"/"lan"; it also bound the
+# LEDs by interface *name*, which is exactly what is unreliable here.
+# LED binding (and the ethernet renaming) now lives in
+# /etc/udev/rules.d/90-r28s-hwfix.rules -> /usr/local/sbin/r28s-hwfix.sh,
+# which resolves each LED to its interface through the hardware device path.

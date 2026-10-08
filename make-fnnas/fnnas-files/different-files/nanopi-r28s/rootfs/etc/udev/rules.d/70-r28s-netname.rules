@@ -1,6 +1,8 @@
-# NanoPi R28S ethernet interface naming (deterministic)
-#   gmac1  (SoC native, Realtek RTL8211F)  = WAN
-#   PCIe   (Realtek RTL8111H)              = LAN
-# Pin names so they do not depend on driver probe order.
-SUBSYSTEM=="net", ACTION=="add", DRIVERS=="rk_gmac-dwmac", NAME="eth0"
-SUBSYSTEM=="net", ACTION=="add", DRIVERS=="r8169", NAME="eth1"
+# SUPERSEDED -- do not use.
+#
+# The old 70-r28s-netname.rules assigned NAME= from 70-*, i.e. *before*
+# systemd's 80-net-setup-link.rules, so the net_setup_link builtin immediately
+# overwrote the name again.  Its match pattern was also wrong: it expected the
+# vendor driver name "rk_gmac-dwmac", while the mainline/Rockchip 6.x kernel
+# used here binds the SoC MAC through "dwmac-rk".
+# Ethernet naming is handled by /etc/udev/rules.d/90-r28s-hwfix.rules now.
