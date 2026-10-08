@@ -1,0 +1,6 @@
+#!/bin/sh
+# NanoPi R28S: bind the WAN/LAN port LEDs (gpio4 PB1 / PB3) to the netdev
+# trigger. The DTB sets linux,default-trigger = "netdev" but an interface
+# name must still be assigned, which fnOS does not do on its own.
+[ -x /usr/local/sbin/r28s-netled.sh ] && /usr/local/sbin/r28s-netled.sh
+exit 0
