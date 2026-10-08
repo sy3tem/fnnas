@@ -1,0 +1,6 @@
+# NanoPi R28S ethernet interface naming (deterministic)
+#   gmac1  (SoC native, Realtek RTL8211F)  = WAN
+#   PCIe   (Realtek RTL8111H)              = LAN
+# Pin names so they do not depend on driver probe order.
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="rk_gmac-dwmac", NAME="eth0"
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="r8169", NAME="eth1"
