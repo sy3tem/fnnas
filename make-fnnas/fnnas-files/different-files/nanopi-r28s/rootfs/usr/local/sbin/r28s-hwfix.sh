@@ -21,11 +21,12 @@
 # The interface for each LED is resolved from the *hardware* (device path), not
 # from the current name, so the LEDs stay correct even if the names change.
 #
-# usage: r28s-hwfix.sh [all|names|leds|status|identify|swap] [--wait N]
+# usage: r28s-hwfix.sh [all|names|leds|status|identify|swap|diag] [--wait N]
 #   all       rename interfaces + bind LEDs (default)
 #   names     only fix eth0/eth1
 #   leds      only bind the port LEDs
 #   status    print interfaces / LEDs / bindings (paste this when reporting)
+#   diag      status + kernel log summary (errors, RTC, MAC)
 #   identify  blink wan_led then lan_led so you can see which LED is which
 #   swap      swap which LED belongs to which port, persist and re-apply
 #
@@ -59,7 +60,7 @@ ipcmd() {
 # ---------------------------------------------------------------- parse args
 while [ $# -gt 0 ]; do
 	case "$1" in
-	all | names | leds | status | identify | swap) CMD="$1" ;;
+	all | names | leds | status | identify | swap | diag) CMD="$1" ;;
 	--wait)
 		shift
 		WAIT="${1:-0}"
@@ -252,6 +253,22 @@ do_status() {
 	done
 	echo "== modules =="
 	lsmod 2>/dev/null | grep -i ledtrig || echo "  (no ledtrig module loaded)"
+	echo "== time / rtc =="
+	date 2>/dev/null
+	if command -v timedatectl >/dev/null 2>&1; then
+		timedatectl 2>/dev/null | grep -iE "local time|time zone|synchronized|rtc time" | sed 's/^/  /'
+	fi
+	[ -e /dev/rtc0 ] && echo "  /dev/rtc0 present: $(readlink -f /dev/rtc0)" || echo "  (no /dev/rtc0 -- hym8563 not bound?)"
+	command -v hwclock >/dev/null 2>&1 && echo "  hwclock -r: $(hwclock -r 2>&1 | head -1)"
+	echo "== mac addresses =="
+	for i in /sys/class/net/*; do
+		n="${i##*/}"
+		case "$n" in lo | docker* | veth* | br-* | virbr* | tun* | tap*) continue ;; esac
+		[ -e "$i/device" ] || continue
+		printf '  %-6s %s  addr_assign=%s\n' "$n" "$(cat "$i/address" 2>/dev/null)" \
+			"$(cat "$i/addr_assign_type" 2>/dev/null)"
+	done
+	echo "  (addr_assign_type: 0=permanent 1=random 3=set by sw 4=set by hw)"
 	echo "== config =="
 	if [ -r "$CONF" ]; then cat "$CONF"; else echo "  (default: wan_led=port1/SoC, lan_led=port2/PCIe)"; fi
 }
@@ -308,6 +325,11 @@ case "$CMD" in
 names) fix_names ;;
 leds) fix_leds ;;
 status) do_status ;;
+diag)
+	do_status
+	echo "== kernel log: errors/warnings =="
+	dmesg 2>/dev/null | grep -iE "error|fail|warn|denied|panic|oops|call trace" | tail -40
+	;;
 identify) do_identify ;;
 swap) do_swap ;;
 all)
